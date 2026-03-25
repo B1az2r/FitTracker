@@ -41,6 +41,12 @@ function estimateBodyFat(gender, age, bmi) {
 
 // ── 유산소 계산 ─────────────────────────────
 
+// 속도 기반 자동 분기: 8km/h 이상이면 달리기 MET 적용
+function getEffectiveCardioType(type, speed) {
+  if ((type === 'walking') && speed >= 8.0) return 'running';
+  return type;
+}
+
 // 구간 하나의 kcal 계산
 function calcCardioInterval(met, weightKg, durationMin) {
   return met * weightKg * (durationMin / 60);
@@ -50,20 +56,23 @@ function calcCardioInterval(met, weightKg, durationMin) {
 // intervals: [{ type, speed, durationMin, incline(선택) }]
 function calcCardioTotal(intervals, weightKg) {
   const results = intervals.map(interval => {
-    const cardioInfo = CARDIO_DB.find(c => c.type === interval.type);
+    const effectiveType = getEffectiveCardioType(interval.type, interval.speed);
+    const cardioInfo = CARDIO_DB.find(c => c.type === effectiveType);
     if (!cardioInfo) return { ...interval, kcal: 0 };
 
     let met = cardioInfo.getMET(interval.speed);
 
     // 경사도 보정 (경사도 1%당 약 0.07 MET 추가 - 걷기/달리기에만 적용)
     if (interval.incline && interval.incline > 0 &&
-        (interval.type === "walking" || interval.type === "running")) {
+        (effectiveType === "walking" || effectiveType === "running")) {
       met += interval.incline * 0.07;
     }
 
     const kcal = calcCardioInterval(met, weightKg, interval.durationMin);
     return {
       ...interval,
+      effectiveType,
+      autoConverted: effectiveType !== interval.type,
       met: Math.round(met * 10) / 10,
       kcal: Math.round(kcal * 10) / 10
     };

@@ -32,6 +32,28 @@ function goToStep2() {
     alert('성별, 나이, 키, 몸무게는 필수 입력 항목입니다.');
     return;
   }
+  if (age < 10 || age > 100) {
+    alert('나이는 10~100 사이로 입력해주세요.');
+    return;
+  }
+  if (height < 100 || height > 250) {
+    alert('키는 100~250cm 사이로 입력해주세요.');
+    return;
+  }
+  if (weight < 20 || weight > 300) {
+    alert('몸무게는 20~300kg 사이로 입력해주세요.');
+    return;
+  }
+  const fatMassVal = parseFloat(document.getElementById('fatMass').value);
+  if (!isNaN(fatMassVal) && (fatMassVal < 0 || fatMassVal >= weight)) {
+    alert('체지방량은 0보다 크고 몸무게보다 작아야 합니다.');
+    return;
+  }
+  const muscleMassVal = parseFloat(document.getElementById('muscleMass').value);
+  if (!isNaN(muscleMassVal) && (muscleMassVal < 0 || muscleMassVal >= weight)) {
+    alert('골격근량은 0보다 크고 몸무게보다 작아야 합니다.');
+    return;
+  }
 
   const fatMass = parseFloat(document.getElementById('fatMass').value) || null;
   const muscleMass = parseFloat(document.getElementById('muscleMass').value) || null;
@@ -71,6 +93,14 @@ function goToResult() {
     const incline = parseFloat(item.querySelector('.cardio-incline').value) || 0;
     const cardioInfo = CARDIO_DB.find(c => c.type === type);
     if (speed > 0 && duration > 0) {
+      if (speed > 30) {
+        alert(`유산소 속도는 30km/h 이하로 입력해주세요.`);
+        return;
+      }
+      if (duration > 300) {
+        alert(`유산소 시간은 300분 이하로 입력해주세요.`);
+        return;
+      }
       cardioIntervals.push({ type, name: cardioInfo ? cardioInfo.name : type, speed, durationMin: duration, incline });
     }
   });
@@ -87,7 +117,11 @@ function goToResult() {
     setRows.forEach(row => {
       const w = parseFloat(row.querySelector('.set-weight').value) || 0;
       const r = parseFloat(row.querySelector('.set-reps').value) || 0;
-      if (w > 0 && r > 0) sets.push({ weight: w, reps: r });
+      if (w > 0 && r > 0) {
+        if (w > 1000) { alert('중량은 1000kg 이하로 입력해주세요.'); return; }
+        if (r > 200)  { alert('반복수는 200회 이하로 입력해주세요.'); return; }
+        sets.push({ weight: w, reps: r });
+      }
     });
     if (sets.length > 0 && dbEntry) {
       weightExercises.push({

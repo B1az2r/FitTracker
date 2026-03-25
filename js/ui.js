@@ -184,7 +184,7 @@ function renderResult(userInfo, cardioResult, weightResult) {
           <tr><th>구간</th><th>속도</th><th>시간</th><th>소모 kcal</th></tr>
           ${cardioResult.intervals.map(i => `
             <tr>
-              <td>${i.name}</td>
+              <td>${i.name}${i.autoConverted ? ' <span style="font-size:0.78em;color:#F59E0B;">(달리기로 자동 적용)</span>' : ''}</td>
               <td>${i.speed} km/h</td>
               <td>${i.durationMin}분</td>
               <td class="kcal-val">${i.kcal} kcal</td>
