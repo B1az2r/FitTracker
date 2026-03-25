@@ -722,7 +722,11 @@ async function searchFood() {
   }
 }
 
-function selectFood(name, kcal) {
+function selectFoodByIdx(idx) {
+  const item = window._foodSearchItems && window._foodSearchItems[idx];
+  if (!item) return;
+  const name = item.FOOD_NM_KR || '';
+  const kcal = Math.round(parseFloat(item.AMT_NUM13) || 0);
   document.getElementById('dietName').value = name;
   document.getElementById('dietKcal').value = kcal;
   document.getElementById('foodSearchResult').innerHTML = '';
