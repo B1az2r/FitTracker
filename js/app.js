@@ -605,8 +605,12 @@ function addDietRecord() {
     return;
   }
 
+  const carbs = parseFloat(document.getElementById('dietCarbs')?.value) || null;
+  const protein = parseFloat(document.getElementById('dietProtein')?.value) || null;
+  const fat = parseFloat(document.getElementById('dietFat')?.value) || null;
+
   const dietRecords = loadDietRecords();
-  dietRecords.push({ date, name, kcal, memo, id: Date.now() });
+  dietRecords.push({ date, name, kcal, carbs, protein, fat, memo, id: Date.now() });
   saveDietRecords(dietRecords);
 
   // 입력 초기화
@@ -639,18 +643,58 @@ function renderDietList(date) {
   }
 
   const total = records.reduce((s, r) => s + r.kcal, 0);
-  let html = `<div style="font-size:0.82em;color:#6B7280;margin-bottom:8px;">총 섭취: <strong style="color:#1E3A8A;">${total} kcal</strong></div>`;
+  const totalCarbs   = records.reduce((s, r) => s + (r.carbs || 0), 0);
+  const totalProtein = records.reduce((s, r) => s + (r.protein || 0), 0);
+  const totalFat     = records.reduce((s, r) => s + (r.fat || 0), 0);
+
+  // 하루 권장량 (currentUser 또는 저장된 사용자 기준)
+  const user = currentUser?.weight ? currentUser : null;
+  const bmr = user ? calcBMR(user.gender, user.age, user.heightCm, user.weight) : null;
+  const tdee = bmr ? Math.round(bmr * 1.55) : null;
+  const recCarbs   = tdee ? Math.round(tdee * 0.55 / 4) : 300;
+  const recProtein = tdee ? Math.round(tdee * 0.20 / 4) : 55;
+  const recFat     = tdee ? Math.round(tdee * 0.25 / 9) : 50;
+
+  function macroBar(val, rec, color) {
+    const pct = Math.min(Math.round((val / rec) * 100), 100);
+    return `<div style="display:flex;align-items:center;gap:6px;font-size:0.78em;">
+      <div style="flex:1;background:#E5E7EB;border-radius:4px;height:6px;overflow:hidden;">
+        <div style="width:${pct}%;background:${color};height:100%;border-radius:4px;transition:width 0.3s;"></div>
+      </div>
+      <span style="min-width:70px;color:#6B7280;">${val}g / ${rec}g (${pct}%)</span>
+    </div>`;
+  }
+
+  let html = `<div style="background:#F9FAFB;border-radius:8px;padding:12px 14px;margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+      <span style="font-size:0.82em;font-weight:600;color:#374151;">오늘 영양소 합계</span>
+      <span style="font-size:0.88em;font-weight:700;color:#1E3A8A;">${total} kcal</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <div><span style="font-size:0.78em;color:#374151;display:inline-block;width:50px;">탄수화물</span>${macroBar(Math.round(totalCarbs), recCarbs, '#3B82F6')}</div>
+      <div><span style="font-size:0.78em;color:#374151;display:inline-block;width:50px;">단백질</span>${macroBar(Math.round(totalProtein), recProtein, '#10B981')}</div>
+      <div><span style="font-size:0.78em;color:#374151;display:inline-block;width:50px;">지방</span>${macroBar(Math.round(totalFat), recFat, '#F59E0B')}</div>
+    </div>
+  </div>`;
 
   records.forEach(r => {
-    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#F9FAFB;border-radius:6px;margin-bottom:6px;font-size:0.88em;">
-      <div>
-        <span style="font-weight:600;">${r.name}</span>
-        ${r.memo ? `<span style="color:#9CA3AF;margin-left:6px;">${r.memo}</span>` : ''}
+    html += `<div style="background:#F9FAFB;border-radius:6px;margin-bottom:6px;font-size:0.88em;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;">
+        <div>
+          <span style="font-weight:600;">${r.name}</span>
+          ${r.memo ? `<span style="color:#9CA3AF;margin-left:6px;">${r.memo}</span>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-weight:700;color:#0F6E56;">${r.kcal} kcal</span>
+          <button onclick="deleteDietRecord(${r.id})" style="background:none;border:none;color:#EF4444;cursor:pointer;font-size:0.85em;">삭제</button>
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-weight:700;color:#0F6E56;">${r.kcal} kcal</span>
-        <button onclick="deleteDietRecord(${r.id})" style="background:none;border:none;color:#EF4444;cursor:pointer;font-size:0.85em;">삭제</button>
-      </div>
+      ${(r.carbs || r.protein || r.fat) ? `
+      <div style="padding:4px 12px 8px;display:flex;gap:12px;font-size:0.78em;color:#6B7280;">
+        ${r.carbs   != null ? `<span>탄수화물 ${r.carbs}g</span>` : ''}
+        ${r.protein != null ? `<span>단백질 ${r.protein}g</span>` : ''}
+        ${r.fat     != null ? `<span>지방 ${r.fat}g</span>` : ''}
+      </div>` : ''}
     </div>`;
   });
 
@@ -919,9 +963,21 @@ function selectFoodByIdx(idx) {
   const name = _extractFoodName(item);
   const kcalInfo = _buildKcalInfo(item);
   const kcal = kcalInfo.effectiveTotalKcal || kcalInfo.baseKcal;
+
+  // 탄단지 추출 (기준량 → 총량 환산)
+  const ratio = (kcalInfo.servingGram && kcalInfo.totalGram && !kcalInfo.isBulkPack)
+    ? kcalInfo.totalGram / kcalInfo.servingGram
+    : 1;
+  const carbs   = item.AMT_NUM6 ? Math.round(parseFloat(item.AMT_NUM6) * ratio * 10) / 10 : null;
+  const protein = item.AMT_NUM3 ? Math.round(parseFloat(item.AMT_NUM3) * ratio * 10) / 10 : null;
+  const fat     = item.AMT_NUM4 ? Math.round(parseFloat(item.AMT_NUM4) * ratio * 10) / 10 : null;
+
   document.getElementById('dietName').value = name;
   document.getElementById('dietKcal').value = kcal;
-  // 메모는 사용자가 직접 입력하도록 자동 채우지 않음
+  if (document.getElementById('dietCarbs'))   document.getElementById('dietCarbs').value   = carbs ?? '';
+  if (document.getElementById('dietProtein')) document.getElementById('dietProtein').value = protein ?? '';
+  if (document.getElementById('dietFat'))     document.getElementById('dietFat').value     = fat ?? '';
+
   document.getElementById('foodSearchResult').innerHTML = '';
   document.getElementById('foodSearchInput').value = '';
 }
