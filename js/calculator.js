@@ -68,13 +68,16 @@ function calcCardioTotal(intervals, weightKg) {
       met += interval.incline * 0.07;
     }
 
-    const kcal = calcCardioInterval(met, weightKg, interval.durationMin);
+    const kcalRaw = calcCardioInterval(met, weightKg, interval.durationMin);
+    const handrailCorrection = interval.handrailCorrection ?? 1.0;
+    const kcal = kcalRaw * handrailCorrection;
     return {
       ...interval,
       effectiveType,
       autoConverted: effectiveType !== interval.type,
       met: Math.round(met * 10) / 10,
-      kcal: Math.round(kcal * 10) / 10
+      kcal: Math.round(kcal * 10) / 10,
+      handrailCorrection
     };
   });
 

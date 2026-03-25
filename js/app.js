@@ -86,24 +86,46 @@ function goToResult() {
   const cardioItems = document.querySelectorAll('#cardioList .exercise-item');
   const cardioIntervals = [];
 
-  cardioItems.forEach(item => {
-    const type = item.querySelector('select').value;
-    const speed = parseFloat(item.querySelector('.cardio-speed').value) || 0;
-    const duration = parseFloat(item.querySelector('.cardio-duration').value) || 0;
-    const incline = parseFloat(item.querySelector('.cardio-incline').value) || 0;
-    const cardioInfo = CARDIO_DB.find(c => c.type === type);
-    if (speed > 0 && duration > 0) {
-      if (speed > 30) {
-        alert(`유산소 속도는 30km/h 이하로 입력해주세요.`);
-        return;
+  for (const item of cardioItems) {
+    const isStepsMode = item.querySelector('.mode-steps').style.display !== 'none';
+
+    if (isStepsMode) {
+      // 걸음 수 모드
+      const steps = parseFloat(item.querySelector('.cardio-steps').value) || 0;
+      const duration = parseFloat(item.querySelector('.cardio-steps-duration').value) || 0;
+      const incline = parseFloat(item.querySelector('.cardio-steps-incline').value) || 0;
+
+      if (steps > 0 && duration > 0) {
+        if (duration > 300) { alert('유산소 시간은 300분 이하로 입력해주세요.'); return; }
+        const speed = stepsToSpeed(steps, duration, currentUser.heightCm);
+        const type = speed >= 8.0 ? 'running' : 'walking';
+        const cardioInfo = CARDIO_DB.find(c => c.type === type);
+        const handrailSteps = parseFloat(item.querySelector('.cardio-steps-handrail').value) || 0;
+        const handrailCorrectionSteps = 1 - (Math.min(handrailSteps, duration) / duration) * 0.10;
+        cardioIntervals.push({
+          type, name: cardioInfo ? cardioInfo.name : type,
+          speed, durationMin: duration, incline,
+          fromSteps: true, steps,
+          handrailCorrection: handrailCorrectionSteps
+        });
       }
-      if (duration > 300) {
-        alert(`유산소 시간은 300분 이하로 입력해주세요.`);
-        return;
+    } else {
+      // 속도 모드
+      const typeEl = item.querySelector('.cardio-type') || item.querySelector('select');
+      const type = typeEl ? typeEl.value : 'walking';
+      const speed = parseFloat(item.querySelector('.cardio-speed').value) || 0;
+      const duration = parseFloat(item.querySelector('.cardio-duration').value) || 0;
+      const incline = parseFloat(item.querySelector('.cardio-incline').value) || 0;
+      const cardioInfo = CARDIO_DB.find(c => c.type === type);
+      if (speed > 0 && duration > 0) {
+        if (speed > 30) { alert('유산소 속도는 30km/h 이하로 입력해주세요.'); return; }
+        if (duration > 300) { alert('유산소 시간은 300분 이하로 입력해주세요.'); return; }
+        const handrail = parseFloat(item.querySelector('.cardio-handrail').value) || 0;
+        const handrailCorrection = 1 - (Math.min(handrail, duration) / duration) * 0.10;
+        cardioIntervals.push({ type, name: cardioInfo ? cardioInfo.name : type, speed, durationMin: duration, incline, handrailCorrection });
       }
-      cardioIntervals.push({ type, name: cardioInfo ? cardioInfo.name : type, speed, durationMin: duration, incline });
     }
-  });
+  }
 
   const weightItems = document.querySelectorAll('#weightList .exercise-item');
   const weightExercises = [];
@@ -236,6 +258,32 @@ function resetAll() {
   if (wdEl2) wdEl2.value = '';
   showScreen('screen1');
   updateStepIndicator(1);
+}
+
+// ── 유산소 입력 모드 전환 ────────────────
+
+function setCardioMode(btn, mode) {
+  const item = btn.closest('.exercise-item');
+  const btns = item.querySelectorAll('.input-mode-btn');
+  btns.forEach(b => {
+    b.style.background = 'white';
+    b.style.color = '#374151';
+    b.style.borderColor = '#D1D5DB';
+  });
+  btn.style.background = '#1E3A8A';
+  btn.style.color = 'white';
+  btn.style.borderColor = '#1E3A8A';
+
+  item.querySelector('.mode-speed').style.display = mode === 'speed' ? '' : 'none';
+  item.querySelector('.mode-steps').style.display = mode === 'steps' ? '' : 'none';
+}
+
+// 걸음 수 → 속도 변환
+function stepsToSpeed(steps, durationMin, heightCm) {
+  const strideM = heightCm * 0.45 / 100; // 보폭(m)
+  const distanceKm = (steps * strideM) / 1000;
+  const speedKmh = distanceKm / (durationMin / 60);
+  return Math.round(speedKmh * 10) / 10;
 }
 
 // ── 탭 전환 ──────────────────────────────

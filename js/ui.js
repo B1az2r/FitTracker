@@ -18,38 +18,100 @@ function addCardioInterval() {
       <span class="exercise-item-title">유산소 구간 ${idx + 1}</span>
       <button class="btn-remove" onclick="removeItem('cardio-${idx}', 'cardioList')">삭제</button>
     </div>
-    <div class="item-form">
-      <div class="form-group">
-        <label>운동 종류</label>
-        <select style="padding:9px 10px;border:1.5px solid #D1D5DB;border-radius:8px;font-size:0.9em;">
-          <option value="walking">걷기</option>
-          <option value="running">달리기</option>
-          <option value="cycling">실내자전거</option>
-          <option value="stairs">계단오르기</option>
-          <option value="elliptical">일립티컬</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>속도 (km/h)</label>
-        <div class="input-wrap">
-          <input type="number" class="cardio-speed" placeholder="7.0" step="0.1" min="0">
-          <span class="unit">km/h</span>
+
+    <!-- 입력 방식 토글 -->
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button type="button" class="input-mode-btn active" onclick="setCardioMode(this, 'speed')"
+        style="flex:1;padding:7px;border:1.5px solid #1E3A8A;border-radius:6px;background:#1E3A8A;color:white;font-size:0.82em;font-weight:600;cursor:pointer;">
+        속도로 입력
+      </button>
+      <button type="button" class="input-mode-btn" onclick="setCardioMode(this, 'steps')"
+        style="flex:1;padding:7px;border:1.5px solid #D1D5DB;border-radius:6px;background:white;color:#374151;font-size:0.82em;font-weight:600;cursor:pointer;">
+        걸음 수로 입력
+      </button>
+    </div>
+
+    <!-- 속도 입력 모드 -->
+    <div class="mode-speed">
+      <div class="item-form">
+        <div class="form-group">
+          <label>운동 종류</label>
+          <select class="cardio-type" style="padding:9px 10px;border:1.5px solid #D1D5DB;border-radius:8px;font-size:0.9em;">
+            <option value="walking">걷기</option>
+            <option value="running">달리기</option>
+            <option value="cycling">실내자전거</option>
+            <option value="stairs">계단오르기</option>
+            <option value="elliptical">일립티컬</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>속도 (km/h)</label>
+          <div class="input-wrap">
+            <input type="number" class="cardio-speed" placeholder="7.0" step="0.1" min="0">
+            <span class="unit">km/h</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>시간 (분)</label>
+          <div class="input-wrap">
+            <input type="number" class="cardio-duration" placeholder="10" min="1">
+            <span class="unit">분</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>경사도 <span class="optional">선택</span></label>
+          <div class="input-wrap">
+            <input type="number" class="cardio-incline" placeholder="0" min="0" max="30">
+            <span class="unit">%</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>손잡이 사용 시간 <span class="optional">선택</span></label>
+          <div class="input-wrap">
+            <input type="number" class="cardio-handrail" placeholder="0" min="0">
+            <span class="unit">분</span>
+          </div>
+          <p class="input-hint">잡은 시간만큼 칼로리 하향 보정 (최대 10%)</p>
         </div>
       </div>
-      <div class="form-group">
-        <label>시간 (분)</label>
-        <div class="input-wrap">
-          <input type="number" class="cardio-duration" placeholder="10" min="1">
-          <span class="unit">분</span>
+    </div>
+
+    <!-- 걸음 수 입력 모드 -->
+    <div class="mode-steps" style="display:none;">
+      <div class="item-form">
+        <div class="form-group">
+          <label>걸음 수</label>
+          <div class="input-wrap">
+            <input type="number" class="cardio-steps" placeholder="6000" min="1">
+            <span class="unit">걸음</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>시간 (분)</label>
+          <div class="input-wrap">
+            <input type="number" class="cardio-steps-duration" placeholder="60" min="1">
+            <span class="unit">분</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>경사도 <span class="optional">선택</span></label>
+          <div class="input-wrap">
+            <input type="number" class="cardio-steps-incline" placeholder="0" min="0" max="30">
+            <span class="unit">%</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>손잡이 사용 시간 <span class="optional">선택</span></label>
+          <div class="input-wrap">
+            <input type="number" class="cardio-steps-handrail" placeholder="0" min="0">
+            <span class="unit">분</span>
+          </div>
+          <p class="input-hint">잡은 시간만큼 칼로리 하향 보정 (최대 10%)</p>
         </div>
       </div>
-      <div class="form-group">
-        <label>경사도 <span class="optional">선택</span></label>
-        <div class="input-wrap">
-          <input type="number" class="cardio-incline" placeholder="0" min="0" max="30">
-          <span class="unit">%</span>
-        </div>
-      </div>
+      <p style="font-size:0.78em;color:#9CA3AF;margin-top:4px;">
+        보폭은 키(cm) × 0.45로 자동 추정됩니다. 속도가 계산되면 MET 공식이 적용됩니다.
+      </p>
     </div>
   `;
   list.appendChild(item);
@@ -184,7 +246,12 @@ function renderResult(userInfo, cardioResult, weightResult) {
           <tr><th>구간</th><th>속도</th><th>시간</th><th>소모 kcal</th></tr>
           ${cardioResult.intervals.map(i => `
             <tr>
-              <td>${i.name}${i.autoConverted ? ' <span style="font-size:0.78em;color:#F59E0B;">(달리기로 자동 적용)</span>' : ''}</td>
+              <td>
+                ${i.name}
+                ${i.autoConverted ? '<span style="font-size:0.78em;color:#F59E0B;">(달리기로 자동 적용)</span>' : ''}
+                ${i.fromSteps ? `<span style="font-size:0.78em;color:#6B7280;">(${i.steps.toLocaleString()}걸음 → ${i.speed}km/h)</span>` : ''}
+                ${i.handrailCorrection && i.handrailCorrection < 1 ? `<span style="font-size:0.78em;color:#F59E0B;">(손잡이 보정 ${Math.round((1-i.handrailCorrection)*100)}%↓)</span>` : ''}
+              </td>
               <td>${i.speed} km/h</td>
               <td>${i.durationMin}분</td>
               <td class="kcal-val">${i.kcal} kcal</td>
