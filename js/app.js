@@ -67,9 +67,12 @@ function goToStep2() {
     leanMass: fatMass ? weight - fatMass : null
   };
 
-  // 운동 날짜 기본값 = 오늘
+  // 운동 날짜 기본값 = 오늘 (날짜가 바뀌었을 수 있으므로 항상 갱신)
   const wdEl = document.getElementById('workoutDate');
-  if (wdEl && !wdEl.value) wdEl.value = new Date().toISOString().split('T')[0];
+  if (wdEl) {
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (!wdEl.value || wdEl.value < todayStr) wdEl.value = todayStr;
+  }
 
   showScreen('screen2');
   updateStepIndicator(2);
@@ -300,6 +303,9 @@ function switchTab(tab) {
     document.querySelector('main').style.display = 'none';
     document.getElementById('historyTab').style.display = '';
     document.getElementById('stepIndicator').style.display = 'none';
+    // 탭 열 때마다 오늘 날짜 기준으로 달력 갱신
+    currentCalYear = new Date().getFullYear();
+    currentCalMonth = new Date().getMonth();
     renderCalendar(currentCalYear, currentCalMonth);
     renderChart();
     initDietDate();
