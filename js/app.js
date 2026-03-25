@@ -422,7 +422,11 @@ function renderDayDetail(dateStr) {
     dietItems.forEach(d => {
       html += `<div class="record-row" style="padding-left:12px;">
         <span class="record-label">${d.name}${d.memo ? ' · ' + d.memo : ''}</span>
-        <span class="record-value" style="color:#B45309;">${d.kcal} kcal</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="record-value" style="color:#B45309;">${d.kcal} kcal</span>
+          <button onclick="deleteDietRecordFromCalendar(${d.id}, '${dateStr}')"
+            style="background:none;border:none;color:#EF4444;cursor:pointer;font-size:0.8em;padding:0;">삭제</button>
+        </div>
       </div>`;
     });
     // 칼로리 밸런스
@@ -621,6 +625,16 @@ function addDietRecord() {
   renderDietList(date);
   if (selectedDate === date) renderDayDetail(date);
   renderChart();
+}
+
+function deleteDietRecordFromCalendar(id, dateStr) {
+  const records = loadDietRecords().filter(r => r.id !== id);
+  saveDietRecords(records);
+  renderDayDetail(dateStr);
+  renderChart();
+  // 식단 목록도 같이 갱신
+  const dietDateEl = document.getElementById('dietDate');
+  if (dietDateEl && dietDateEl.value === dateStr) renderDietList(dateStr);
 }
 
 function deleteDietRecord(id) {

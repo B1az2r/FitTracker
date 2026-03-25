@@ -1,0 +1,25 @@
+{
+  "name": "운동 칼로리 추정기",
+  "short_name": "칼로리 추정기",
+  "description": "운동 소모 칼로리 추정 및 일일 칼로리 밸런스 관리",
+  "start_url": "/workout-calorie-estimator/",
+  "scope": "/workout-calorie-estimator/",
+  "display": "standalone",
+  "background_color": "#F3F4F6",
+  "theme_color": "#1E3A8A",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
