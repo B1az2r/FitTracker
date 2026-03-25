@@ -214,7 +214,8 @@ function removeItem(id, listId) {
 // 결과 화면 렌더링
 function renderResult(userInfo, cardioResult, weightResult) {
   const bmi = calcBMI(userInfo.weight, userInfo.heightCm);
-  const bmr = calcBMR(userInfo.gender, userInfo.age, userInfo.heightCm, userInfo.weight);
+  const bmr = calcBMR(userInfo.gender, userInfo.age, userInfo.heightCm, userInfo.weight, userInfo.fatMass);
+  const bmrMethod = calcBMRMethod(userInfo.fatMass, userInfo.weight);
   const idealWeight = calcIdealWeight(userInfo.gender, userInfo.heightCm);
   const recommended = calcRecommendedCalories(bmr);
 
@@ -366,6 +367,7 @@ function renderResult(userInfo, cardioResult, weightResult) {
         <div class="body-item">
           <div class="body-item-label">기초대사량 (BMR)</div>
           <div class="body-item-value">${Math.round(bmr)} kcal</div>
+          <div style="font-size:0.72em;color:#9CA3AF;margin-top:2px;">${bmrMethod}</div>
         </div>
         <div class="body-item">
           <div class="body-item-label">권장 섭취 칼로리</div>

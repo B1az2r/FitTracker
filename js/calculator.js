@@ -9,13 +9,25 @@ function calcBMI(weight, heightCm) {
   return weight / (h * h);
 }
 
-function calcBMR(gender, age, heightCm, weight) {
-  // Mifflin-St Jeor 공식
+function calcBMR(gender, age, heightCm, weight, fatMass) {
+  // 체지방량 있으면 Katch-McArdle, 없으면 Mifflin-St Jeor
+  if (fatMass && fatMass > 0 && fatMass < weight) {
+    const leanMass = weight - fatMass;
+    return 370 + 21.6 * leanMass; // Katch-McArdle
+  }
+  // Mifflin-St Jeor
   if (gender === "male") {
     return 10 * weight + 6.25 * heightCm - 5 * age + 5;
   } else {
     return 10 * weight + 6.25 * heightCm - 5 * age - 161;
   }
+}
+
+// BMR 계산 방식 반환 (UI 표시용)
+function calcBMRMethod(fatMass, weight) {
+  return (fatMass && fatMass > 0 && fatMass < weight)
+    ? 'Katch-McArdle (체성분 반영)'
+    : 'Mifflin-St Jeor (기본)';
 }
 
 function calcIdealWeight(gender, heightCm) {

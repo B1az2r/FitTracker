@@ -434,7 +434,7 @@ function renderDayDetail(dateStr) {
     const balance = totalDiet - workoutMin;
 
     // 하루 순 밸런스: 섭취 - (BMR + 운동 소모)
-    const bmrVal = record.user ? calcBMR(record.user.gender, record.user.age, record.user.heightCm, record.user.weight) : 0;
+    const bmrVal = record.user ? calcBMR(record.user.gender, record.user.age, record.user.heightCm, record.user.weight, record.user.fatMass) : 0;
     const dayBalance = totalDiet - Math.round(bmrVal) - workoutMin;
 
     // 체중 방향 판단
@@ -507,7 +507,7 @@ function renderChart() {
 
     // 하루 순 밸런스: 섭취 - BMR - 운동소모
     if (intake !== null && burn !== null && record && record.user) {
-      const bmr = calcBMR(record.user.gender, record.user.age, record.user.heightCm, record.user.weight);
+      const bmr = calcBMR(record.user.gender, record.user.age, record.user.heightCm, record.user.weight, record.user.fatMass);
       balanceData.push(Math.round(intake - Math.round(bmr) - burn));
     } else {
       balanceData.push(null);
@@ -663,7 +663,7 @@ function renderDietList(date) {
 
   // 하루 권장량 (currentUser 또는 저장된 사용자 기준)
   const user = currentUser?.weight ? currentUser : null;
-  const bmr = user ? calcBMR(user.gender, user.age, user.heightCm, user.weight) : null;
+  const bmr = user ? calcBMR(user.gender, user.age, user.heightCm, user.weight, user.fatMass) : null;
   const tdee = bmr ? Math.round(bmr * 1.55) : null;
   const recCarbs   = tdee ? Math.round(tdee * 0.55 / 4) : 300;
   const recProtein = tdee ? Math.round(tdee * 0.20 / 4) : 55;
