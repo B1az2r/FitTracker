@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>계산 엔진 테스트</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 30px; background: #f5f5f5; }
+    .result { background: white; padding: 20px; border-radius: 8px; margin: 16px 0; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+    h2 { color: #1E3A8A; }
+    h3 { color: #374151; }
+    .kcal { font-size: 1.4em; font-weight: bold; color: #0F6E56; }
+    .range { color: #6B7280; font-size: 0.9em; }
+    table { border-collapse: collapse; width: 100%; }
+    th { background: #1E3A8A; color: white; padding: 8px 12px; text-align: left; }
+    td { padding: 8px 12px; border-bottom: 1px solid #e5e7eb; }
+    tr:nth-child(even) td { background: #f9fafb; }
+    .note { background: #FEF9C3; padding: 10px; border-radius: 4px; font-size: 0.85em; color: #92400E; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>계산 엔진 테스트</h1>
+  <p>오늘 네가 한 운동을 넣어서 테스트해볼게.</p>
+
+  <div id="output"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/calculator.js"></script>
+  <script>
+    // ── 테스트 데이터 (네 오늘 운동) ──
+    const user = {
+      gender: "male",
+      age: 26,
+      heightCm: 167,
+      weight: 69.9,
+      fatMass: 19,       // 체지방량 kg
+      leanMass: 50.9     // 제지방량 kg
+    };
+
+    // 유산소
+    const cardioIntervals = [
+      { type: "walking", name: "걷기",   speed: 7.0,  durationMin: 9,  incline: 0 },
+      { type: "running", name: "달리기", speed: 12.7, durationMin: 5,  incline: 0 },
+      { type: "walking", name: "걷기",   speed: 7.0,  durationMin: 2,  incline: 0 },
+      { type: "running", name: "달리기", speed: 13.0, durationMin: 5,  incline: 0 },
+      { type: "walking", name: "걷기",   speed: 7.0,  durationMin: 2,  incline: 0 },
+      { type: "running", name: "달리기", speed: 13.5, durationMin: 5,  incline: 0 },
+      { type: "walking", name: "걷기",   speed: 7.0,  durationMin: 2,  incline: 0 },
+    ];
+
+    // 웨이트
+    const weightExercises = [
+      {
+        name: "레그프레스",
+        group: "하체복합",
+        correction: 1.03,
+        restSeconds: 90,
+        sets: [
+          { weight: 40,  reps: 15 },
+          { weight: 80,  reps: 15 },
+          { weight: 120, reps: 15 },
+          { weight: 160, reps: 15 },
+          { weight: 200, reps: 15 },
+        ]
+      },
+      {
+        name: "레그익스텐션",
+        group: "하체고립",
+        correction: 1.03,
+        restSeconds: 90,
+        sets: [
+          { weight: 40, reps: 15 },
+          { weight: 48, reps: 15 },
+          { weight: 56, reps: 15 },
+          { weight: 64, reps: 15 },
+        ]
+      }
+    ];
+
+    // ── 계산 실행 ──
+    const cardioResult = calcCardioTotal(cardioIntervals, user.weight);
+    const weightResult = calcWeightSession(user, weightExercises);
+    const bmi = calcBMI(user.weight, user.heightCm);
+    const bmr = calcBMR(user.gender, user.age, user.heightCm, user.weight);
+    const idealWeight = calcIdealWeight(user.gender, user.heightCm);
+
+    // ── 결과 출력 ──
+    let html = '';
+
+    // 신체 지표
+    html += `<div class="result">
+      <h2>신체 지표</h2>
+      <table>
+        <tr><th>항목</th><th>값</th></tr>
+        <tr><td>BMI</td><td>${bmi.toFixed(1)}</td></tr>
+        <tr><td>기초대사량 (BMR)</td><td>${Math.round(bmr)} kcal</td></tr>
+        <tr><td>적정 체중</td><td>${idealWeight.toFixed(1)} kg</td></tr>
+        <tr><td>현재 체중과 차이</td><td>${(user.weight - idealWeight).toFixed(1)} kg</td></tr>
+        <tr><td>권장 섭취 칼로리</td><td>${calcRecommendedCalories(bmr)} kcal</td></tr>
+      </table>
+    </div>`;
+
+    // 유산소 결과
+    html += `<div class="result">
+      <h2>유산소 결과</h2>
+      <table>
+        <tr><th>구간</th><th>속도</th><th>시간</th><th>MET</th><th>소모 kcal</th></tr>`;
+    cardioResult.intervals.forEach(i => {
+      html += `<tr>
+        <td>${i.name}</td>
+        <td>${i.speed} km/h</td>
+        <td>${i.durationMin}분</td>
+        <td>${i.met}</td>
+        <td>${i.kcal} kcal</td>
+      </tr>`;
+    });
+    html += `</table>
+      <p class="kcal">유산소 총합: ${cardioResult.totalKcal} kcal</p>
+    </div>`;
+
+    // 웨이트 결과
+    html += `<div class="result">
+      <h2>웨이트 결과</h2>
+      <p class="range">총 볼륨: ${weightResult.totalVolume.toLocaleString()} kg | 
+      계산 모드: ${weightResult.isPreciseMode ? '정밀 모드 (체지방 입력)' : '추정 모드'}</p>
+      <table>
+        <tr><th>운동</th><th>볼륨</th><th>세트</th><th>총 반복</th><th>추정 kcal</th><th>범위</th></tr>`;
+    weightResult.exercises.forEach(ex => {
+      html += `<tr>
+        <td>${ex.name}</td>
+        <td>${ex.volume.toLocaleString()} kg</td>
+        <td>${ex.sets}세트</td>
+        <td>${ex.totalReps}회</td>
+        <td>${ex.kcal} kcal</td>
+        <td class="range">${ex.kcalMin} ~ ${ex.kcalMax}</td>
+      </tr>`;
+    });
+    html += `</table>
+      <p class="kcal">웨이트 총합: ${weightResult.sessionKcal} kcal 
+        <span class="range">(범위: ${weightResult.sessionMin} ~ ${weightResult.sessionMax})</span>
+      </p>
+    </div>`;
+
+    // 총합
+    const totalKcal = cardioResult.totalKcal + weightResult.sessionKcal;
+    const totalMin = cardioResult.totalKcal + weightResult.sessionMin;
+    const totalMax = cardioResult.totalKcal + weightResult.sessionMax;
+
+    html += `<div class="result">
+      <h2>오늘 총 소모 칼로리</h2>
+      <p class="kcal">약 ${totalMin} ~ ${totalMax} kcal</p>
+      <p class="range">유산소 ${cardioResult.totalKcal} kcal + 웨이트 ${weightResult.sessionMin}~${weightResult.sessionMax} kcal</p>
+      <div class="note">본 값은 의료적 측정치가 아닌 참고용 추정치입니다. 실제 소모 칼로리와 차이가 있을 수 있습니다.</div>
+    </div>`;
+
+    document.getElementById('output').innerHTML = html;
+  </script>
+</body>
+</html>

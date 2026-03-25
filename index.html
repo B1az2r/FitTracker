@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>운동 칼로리 계산기</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── 헤더 ── -->
+  <header>
+    <div class="header-inner">
+      <h1 class="logo">운동 칼로리 추정기</h1>
+      <p class="logo-sub">실제 수행 데이터 기반 개인 맞춤형 추정</p>
+    </div>
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('calc')">운동 계산</button>
+      <button class="tab-btn" onclick="switchTab('history')">기록 보기</button>
+    </div>
+  </header>
+
+  <!-- ── 메인 컨테이너 ── -->
+  <main>
+
+    <!-- 진행 단계 표시 -->
+    <div class="step-indicator" id="stepIndicator">
+      <div class="step active" data-step="1">
+        <div class="step-circle">1</div>
+        <span>신체 정보</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" data-step="2">
+        <div class="step-circle">2</div>
+        <span>운동 입력</span>
+      </div>
+      <div class="step-line"></div>
+      <div class="step" data-step="3">
+        <div class="step-circle">3</div>
+        <span>결과</span>
+      </div>
+    </div>
+
+    <!-- ── 화면 1: 신체 정보 입력 ── -->
+    <section class="screen active" id="screen1">
+      <div class="card">
+        <h2 class="card-title">신체 정보 입력</h2>
+        <p class="card-desc">기본 정보를 입력하면 더 정확한 칼로리 추정이 가능합니다.</p>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>성별 <span class="required">*</span></label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="gender" value="male" checked> 남성
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="gender" value="female"> 여성
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="age">나이 (만) <span class="required">*</span></label>
+            <div class="input-wrap">
+              <input type="number" id="age" placeholder="나이" min="10" max="100">
+              <span class="unit">세</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="height">키 <span class="required">*</span></label>
+            <div class="input-wrap">
+              <input type="number" id="height" placeholder="키" min="100" max="250">
+              <span class="unit">cm</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="weight">몸무게 <span class="required">*</span></label>
+            <div class="input-wrap">
+              <input type="number" id="weight" placeholder="몸무게" min="20" max="300" step="0.1">
+              <span class="unit">kg</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="fatMass">
+              체지방량 <span class="optional">선택</span>
+            </label>
+            <div class="input-wrap">
+              <input type="number" id="fatMass" placeholder="인바디 측정값" min="0" max="100" step="0.1">
+              <span class="unit">kg</span>
+            </div>
+            <p class="input-hint">입력 시 더 정밀한 웨이트 계산이 가능합니다</p>
+          </div>
+
+          <div class="form-group">
+            <label for="muscleMass">
+              골격근량 <span class="optional">선택</span>
+            </label>
+            <div class="input-wrap">
+              <input type="number" id="muscleMass" placeholder="인바디 측정값" min="0" max="100" step="0.1">
+              <span class="unit">kg</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="btn-wrap">
+          <button class="btn-primary" onclick="goToStep2()">다음 →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 화면 2: 운동 입력 ── -->
+    <section class="screen" id="screen2">
+      <div class="card">
+        <h2 class="card-title">운동 입력</h2>
+        <p class="card-desc">운동을 추가해주세요. 날짜를 변경하면 과거/미래 기록도 저장할 수 있습니다.</p>
+        <div class="form-group" style="margin-bottom:20px;max-width:240px;">
+          <label for="workoutDate">운동 날짜</label>
+          <input type="date" id="workoutDate" style="padding:10px 12px;border:1.5px solid #D1D5DB;border-radius:8px;font-size:0.95em;width:100%;">
+        </div>
+
+        <!-- 유산소 섹션 -->
+        <div class="exercise-section">
+          <div class="section-header">
+            <h3>유산소 운동</h3>
+            <button class="btn-add" onclick="addCardioInterval()">+ 구간 추가</button>
+          </div>
+          <div id="cardioList" class="exercise-list">
+            <p class="empty-msg">유산소 구간을 추가해주세요</p>
+          </div>
+        </div>
+
+        <!-- 웨이트 섹션 -->
+        <div class="exercise-section">
+          <div class="section-header">
+            <h3>웨이트 운동</h3>
+            <button class="btn-add" onclick="addWeightExercise()">+ 운동 추가</button>
+          </div>
+          <div id="weightList" class="exercise-list">
+            <p class="empty-msg">웨이트 운동을 추가해주세요</p>
+          </div>
+        </div>
+
+        <div class="btn-wrap">
+          <button class="btn-secondary" onclick="goToStep1()">← 이전</button>
+          <button class="btn-primary" onclick="goToResult()">결과 보기 →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 화면 3: 결과 ── -->
+    <section class="screen" id="screen3">
+      <div id="resultContent"></div>
+      <div class="btn-wrap" style="padding: 0 0 40px;">
+        <button class="btn-secondary" onclick="goToStep2()">← 운동 추가</button>
+        <button class="btn-primary" onclick="resetAll()">새로 계산하기</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── 기록 화면 ── -->
+  <div id="historyTab" style="display:none;">
+    <main>
+      <div class="card">
+        <h2 class="card-title">운동 기록</h2>
+        <p class="card-desc">날짜를 클릭하면 해당 날의 운동 기록을 확인할 수 있습니다.</p>
+
+        <!-- 월 이동 -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <button class="btn-secondary" onclick="changeMonth(-1)" style="padding:8px 16px;">← 이전달</button>
+          <span id="calendarTitle" style="font-weight:700;font-size:1.1em;color:#1E3A8A;"></span>
+          <button class="btn-secondary" onclick="changeMonth(1)" style="padding:8px 16px;">다음달 →</button>
+        </div>
+
+        <!-- 달력 -->
+        <div id="calendarGrid" style="margin-bottom:28px;"></div>
+
+        <!-- 선택한 날 기록 -->
+        <div id="dayDetail"></div>
+      </div>
+
+      <!-- 식단 입력 카드 -->
+      <div class="card">
+        <h2 class="card-title">식단 기록 추가</h2>
+        <p class="card-desc">오늘 섭취한 음식을 기록하세요.</p>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="dietDate">날짜 <span class="required">*</span></label>
+            <input type="date" id="dietDate" style="padding:10px 12px;border:1.5px solid #D1D5DB;border-radius:8px;font-size:0.95em;width:100%;">
+          </div>
+          <div class="form-group">
+            <label for="dietName">음식명 <span class="required">*</span></label>
+            <input type="text" id="dietName" placeholder="예: 닭가슴살 도시락" style="padding:10px 12px;border:1.5px solid #D1D5DB;border-radius:8px;font-size:0.95em;width:100%;">
+          </div>
+          <div class="form-group">
+            <label for="dietKcal">섭취 칼로리 <span class="required">*</span></label>
+            <div class="input-wrap">
+              <input type="number" id="dietKcal" placeholder="500" min="0">
+              <span class="unit">kcal</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="dietMemo">메모 <span class="optional">선택</span></label>
+            <input type="text" id="dietMemo" placeholder="예: 점심" style="padding:10px 12px;border:1.5px solid #D1D5DB;border-radius:8px;font-size:0.95em;width:100%;">
+          </div>
+        </div>
+        <div class="btn-wrap">
+          <button class="btn-primary" onclick="addDietRecord()">기록 추가</button>
+        </div>
+        <div id="dietList" style="margin-top:16px;"></div>
+      </div>
+
+      <!-- 차트 -->
+      <div class="card">
+        <h2 class="card-title">최근 2주 칼로리 추이</h2>
+        <div style="position:relative;width:100%;height:220px;">
+          <canvas id="kcalChart"></canvas>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <footer>
+    <p>본 서비스의 칼로리 값은 참고용 추정치입니다. 의료적 측정치가 아닙니다.</p>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <script src="js/data.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const dietDateEl = document.getElementById('dietDate');
+      if (dietDateEl) {
+        dietDateEl.addEventListener('change', () => {
+          renderDietList(dietDateEl.value);
+        });
+      }
+    });
+  </script>
+  <script src="js/calculator.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
