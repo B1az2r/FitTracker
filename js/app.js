@@ -949,7 +949,7 @@ async function searchFood() {
   resultEl.innerHTML = '<p style="font-size:0.85em;color:#6B7280;">검색 중...</p>';
 
   try {
-    const url = `${FOOD_API_URL}?serviceKey=${FOOD_API_KEY}&FOOD_NM_KR=${encodeURIComponent(query)}&numOfRows=30&pageNo=1&type=json`;
+    const url = `${FOOD_API_URL}?serviceKey=${FOOD_API_KEY}&FOOD_NM_KR=${encodeURIComponent(query)}&numOfRows=100&pageNo=1&type=json`;
     const res = await fetch(url);
     const data = await res.json();
 
@@ -971,35 +971,76 @@ async function searchFood() {
 
     window._foodSearchItems = normalizedItems;
 
-    let html = `
-      <div style="font-size:0.8em;color:#6B7280;margin:4px 2px 6px;">검색 결과 ${normalizedItems.length}건</div>
-      <div style="border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;margin-top:4px;max-height:420px;overflow-y:auto;">
-    `;
+    // 브랜드별 그룹화
+    const grouped = {};
+    const noMaker = [];
     normalizedItems.forEach((item, idx) => {
+      const maker = item.MAKER_NM || item.BIZRNO_NM || '';
+      if (maker) {
+        if (!grouped[maker]) grouped[maker] = [];
+        grouped[maker].push({ item, idx });
+      } else {
+        noMaker.push({ item, idx });
+      }
+    });
+
+    const totalCount = normalizedItems.length;
+    let html = `<div style="font-size:0.8em;color:#6B7280;margin:4px 2px 6px;">검색 결과 ${totalCount}건</div>`;
+    html += `<div style="border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;margin-top:4px;max-height:480px;overflow-y:auto;">`;
+
+    function renderFoodItem(item, idx) {
       const name = _extractFoodName(item);
       const kcalInfo = _buildKcalInfo(item);
       const per = _extractServingText(item);
-      const maker = item.MAKER_NM || item.BIZRNO_NM || '';
       const mainKcal = kcalInfo.effectiveTotalKcal || kcalInfo.baseKcal;
       const leftBasisLabel = (kcalInfo.effectiveTotalKcal && kcalInfo.totalGram)
-        ? `총량 ${kcalInfo.totalGram}g`
-        : per;
-      html += `
-        <div onclick="selectFoodByIdx(${idx})"
-          style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #F3F4F6;display:flex;justify-content:space-between;align-items:center;transition:background 0.15s;"
-          onmouseover="this.style.background='#EFF6FF'" onmouseout="this.style.background='white'">
-          <div>
-            <span style="font-size:0.9em;font-weight:600;">${name}</span>
-            <span style="font-size:0.78em;color:#9CA3AF;margin-left:6px;">${leftBasisLabel}</span>
-            ${maker ? `<span style="font-size:0.76em;color:#9CA3AF;margin-left:6px;">${maker}</span>` : ''}
-          </div>
-          <div style="text-align:right;">
-            <div style="font-size:0.88em;font-weight:700;color:#0F6E56;">${mainKcal} kcal</div>
-            ${kcalInfo.isBulkPack ? `<div style="font-size:0.74em;color:#9CA3AF;">멀티팩/대용량은 총량 계산 제외</div>` : ''}
-            ${kcalInfo.kcalPer100 ? `<div style="font-size:0.74em;color:#9CA3AF;">${kcalInfo.kcalPer100} kcal/100g</div>` : ''}
-          </div>
-        </div>`;
+        ? `총량 ${kcalInfo.totalGram}g` : per;
+      return `<div onclick="selectFoodByIdx(${idx})"
+        style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #F3F4F6;display:flex;justify-content:space-between;align-items:center;background:white;"
+        onmouseover="this.style.background='#EFF6FF'" onmouseout="this.style.background='white'">
+        <div>
+          <span style="font-size:0.9em;font-weight:600;">${name}</span>
+          <span style="font-size:0.78em;color:#9CA3AF;margin-left:6px;">${leftBasisLabel}</span>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:0.88em;font-weight:700;color:#0F6E56;">${mainKcal} kcal</div>
+          ${kcalInfo.kcalPer100 ? `<div style="font-size:0.74em;color:#9CA3AF;">${kcalInfo.kcalPer100} kcal/100g</div>` : ''}
+        </div>
+      </div>`;
+    }
+
+    // 한글 브랜드 우선 정렬 (영문은 뒤로)
+    const sortedMakers = Object.entries(grouped).sort(([a], [b]) => {
+      const aIsKorean = /[가-힣]/.test(a);
+      const bIsKorean = /[가-힣]/.test(b);
+      if (aIsKorean && !bIsKorean) return -1;
+      if (!aIsKorean && bIsKorean) return 1;
+      return a.localeCompare(b);
     });
+
+    // 브랜드 있는 것 먼저 (그룹별)
+    sortedMakers.forEach(([maker, entries]) => {
+      const isKorean = /[가-힣]/.test(maker);
+      html += `<div style="padding:8px 14px;background:${isKorean ? '#EFF6FF' : '#F9FAFB'};border-left:4px solid ${isKorean ? '#1E3A8A' : '#9CA3AF'};border-bottom:1px solid #E5E7EB;display:flex;align-items:center;gap:6px;">
+        <span style="font-size:0.85em;font-weight:700;color:${isKorean ? '#1E3A8A' : '#6B7280'};">🏢 ${maker}</span>
+        <span style="font-size:0.75em;color:#9CA3AF;background:#E5E7EB;padding:1px 6px;border-radius:10px;">${entries.length}건</span>
+      </div>`;
+      entries.forEach(({ item, idx }) => {
+        html += renderFoodItem(item, idx);
+      });
+    });
+
+    // 브랜드 없는 일반 식품
+    if (noMaker.length > 0) {
+      html += `<div style="padding:8px 14px;background:#F9FAFB;border-left:4px solid #10B981;border-bottom:1px solid #E5E7EB;display:flex;align-items:center;gap:6px;">
+        <span style="font-size:0.85em;font-weight:700;color:#065F46;">🍽️ 일반 식품</span>
+        <span style="font-size:0.75em;color:#9CA3AF;background:#E5E7EB;padding:1px 6px;border-radius:10px;">${noMaker.length}건</span>
+      </div>`;
+      noMaker.forEach(({ item, idx }) => {
+        html += renderFoodItem(item, idx);
+      });
+    }
+
     html += '</div>';
     resultEl.innerHTML = html;
 

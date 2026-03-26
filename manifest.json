@@ -1,7 +1,7 @@
 {
-  "name": "운동 칼로리 추정기",
-  "short_name": "칼로리 추정기",
-  "description": "운동 소모 칼로리 추정 및 일일 칼로리 밸런스 관리",
+  "name": "FitTracker",
+  "short_name": "FitTracker",
+  "description": "운동 · 식단 · 칼로리 밸런스 관리 서비스",
   "start_url": "/workout-calorie-estimator/",
   "scope": "/workout-calorie-estimator/",
   "display": "standalone",
