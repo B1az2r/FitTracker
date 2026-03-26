@@ -203,7 +203,8 @@ function saveRecord(user, cardioResult, weightResult) {
       age: user.age,
       heightCm: user.heightCm,
       weight: user.weight,
-      fatMass: user.fatMass || null
+      fatMass: user.fatMass || null,
+      muscleMass: user.muscleMass || null
     },
     cardio: cardioResult ? {
       totalKcal: cardioResult.totalKcal,
@@ -731,9 +732,15 @@ function renderDietList(date) {
   const user = currentUser?.weight ? currentUser : null;
   const bmr = user ? calcBMR(user.gender, user.age, user.heightCm, user.weight, user.fatMass) : null;
   const tdee = bmr ? Math.round(bmr * 1.55) : null;
-  const recCarbs   = tdee ? Math.round(tdee * 0.55 / 4) : 300;
-  const recProtein = tdee ? Math.round(tdee * 0.20 / 4) : 55;
-  const recFat     = tdee ? Math.round(tdee * 0.25 / 9) : 50;
+  const recCarbs = tdee ? Math.round(tdee * 0.55 / 4) : 300;
+  const recFat   = tdee ? Math.round(tdee * 0.25 / 9) : 50;
+
+  // 단백질 권장량: 골격근량 입력 시 골격근량 × 2.0g, 없으면 TDEE 기반
+  const muscleMass = user?.muscleMass || null;
+  const recProtein = muscleMass
+    ? Math.round(muscleMass * 2.0)
+    : (tdee ? Math.round(tdee * 0.20 / 4) : 55);
+  const proteinMethod = muscleMass ? `골격근량 기반 (${muscleMass}kg × 2.0)` : 'TDEE 기반';
 
   function macroBar(val, rec, color) {
     const pct = Math.min(Math.round((val / rec) * 100), 100);
@@ -752,7 +759,11 @@ function renderDietList(date) {
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;">
       <div><span style="font-size:0.78em;color:#374151;display:inline-block;width:50px;">탄수화물</span>${macroBar(Math.round(totalCarbs), recCarbs, '#3B82F6')}</div>
-      <div><span style="font-size:0.78em;color:#374151;display:inline-block;width:50px;">단백질</span>${macroBar(Math.round(totalProtein), recProtein, '#10B981')}</div>
+      <div>
+        <span style="font-size:0.78em;color:#374151;display:inline-block;width:50px;">단백질</span>
+        <span style="font-size:0.7em;color:#9CA3AF;">${muscleMass ? '(골격근량 반영)' : '(일반 계산)'}</span>
+        ${macroBar(Math.round(totalProtein), recProtein, '#10B981')}
+      </div>
       <div><span style="font-size:0.78em;color:#374151;display:inline-block;width:50px;">지방</span>${macroBar(Math.round(totalFat), recFat, '#F59E0B')}</div>
     </div>
   </div>`;
