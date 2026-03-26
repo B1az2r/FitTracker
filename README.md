@@ -2,7 +2,7 @@
 
 > 연구 기반 공식과 공공 API를 활용한 개인 맞춤형 건강 관리 서비스
 
-🔗 **배포 링크**: https://bit.ly/4uTqgP6 
+🔗 **배포 링크**: https://bit.ly/4uTqgP6 , https://b1az2r.github.io/FitTracker/
 📱 **PWA 지원**: 모바일 홈 화면에 앱으로 설치 가능
 
 ---
